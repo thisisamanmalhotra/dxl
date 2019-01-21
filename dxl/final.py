@@ -1,0 +1,16 @@
+import dxl
+a= dxl.get_available_ports()
+print (a)
+d = dxl.dxl(a[0], 1000000)
+print(d.scan(10))
+dictio= {3:512, 4:512, 5:512, 6:512, 7:450}
+# d.speed(3, 100)
+# d.speed(4, 100)
+d.speed(5, 40)
+d.speed(6, 40)
+d.speed(7, 400)
+d.move(7, 700)
+d.move(5,512)
+d.move(7, 450)
+d.move(6, 512)
+d.move(5, 800)
