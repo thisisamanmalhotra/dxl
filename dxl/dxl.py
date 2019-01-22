@@ -169,13 +169,13 @@ class dxl(object):
 
     @staticmethod
     def createByteArray(bin_value):
-        byte_array = [DXL_LOBYTE(DXL_LOWORD(bin_value)), DXL_HIBYTE(DXL_LOWORD(bin_value)), DXL_LOBYTE(DXL_HIWORD(bin_value)), DXL_HIBYTE(DXL_HIWORD(bin_value))]
+        byte_array = [DXL_LOBYTE(DXL_LOWORD(bin_value)), DXL_HIBYTE(DXL_LOWORD(bin_value))]
         return byte_array
 
     def __sync_write(self, param, ids):
         pos = self._register[param][0]
-        #size = self._register[param][1]
-        groupSyncWrite = GroupSyncWrite(self.portHandler, self.packetHandler, pos, 4)
+        size = self._register[param][1]
+        groupSyncWrite = GroupSyncWrite(self.portHandler, self.packetHandler, pos, size)
         for k,v in ids.items():
             dxl_addparam_result = groupSyncWrite.addParam(k, self.createByteArray(v))
             assert dxl_addparam_result, "Group Sync Write Failed"
@@ -218,3 +218,4 @@ class dxl(object):
             return True
         else:
             return False
+
