@@ -1,11 +1,12 @@
 #! /usr/bin/env python3
-name = 'dxl'
+name = "dxl"
 import glob
 from dynamixel_sdk import *
 from reg import *
 
+
 def get_available_ports():
-    '''
+    """
     Displays the ports connected to serial devices.
 
     Uses glob.glob object to return a tuple of possible serial ports.
@@ -13,9 +14,13 @@ def get_available_ports():
 
     Returns:
         A tuple containing ports with serial devices connected to them.
-    '''
+    """
 
-    return glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*") + glob.glob("/dev/ttyCOM*")
+    return (
+        glob.glob("/dev/ttyUSB*")
+        + glob.glob("/dev/ttyACM*")
+        + glob.glob("/dev/ttyCOM*")
+    )
 
 
 class dxl(object):
@@ -27,7 +32,7 @@ class dxl(object):
         packetHandler: packethandler object from Dynamixel SDK
     """
 
-    def __init__(self, DeviceName, baudrate, protocol = 1, mx = False):
+    def __init__(self, DeviceName, baudrate, protocol=1, mx=False):
         self.portHandler = PortHandler(DeviceName)
         self._baudrate = baudrate
         self._protocol_version = protocol
@@ -55,26 +60,28 @@ class dxl(object):
 
     @property
     def BAUDRATE(self):
-       return self._baudrate
+        return self._baudrate
+
     @BAUDRATE.setter
     def BAUDRATE(self, baudrate):
-       self._baudrate = baudrate
-       return True
+        self._baudrate = baudrate
+        return True
 
     @property
     def PROTOCOL_VERSION(self):
-       return self._protocol_version
+        return self._protocol_version
+
     @PROTOCOL_VERSION.setter
     def PROTOCOL_VERSION(self, protocol):
-       try:
-           assert protocol == 1 or protocol == 2
-           self._protocol_version = protocol
-       except AssertionError:
-           print("Only Protocol 1 and Protocol 2 supported")
-       return True
+        try:
+            assert protocol == 1 or protocol == 2
+            self._protocol_version = protocol
+        except AssertionError:
+            print("Only Protocol 1 and Protocol 2 supported")
+        return True
 
-    def error(self, dxl_comm_result, dxl_error = 0):
-        '''
+    def error(self, dxl_comm_result, dxl_error=0):
+        """
         Displays the error output
 
         Args:
@@ -82,18 +89,17 @@ class dxl(object):
             dxl_error: Error ID
         Returns:
             Boolean value depicting if there was an error or not
-        '''
-        
+        """
+
         if dxl_comm_result is not COMM_SUCCESS:
-            print(self.packetHandler.getTxRxResult(self.PROTOCOL_VERSION, dxl_comm_result))
+            print(self.packetHandler.getTxRxResult(dxl_comm_result))
             return True
         elif dxl_error is not 0:
-            print(self.getRxPacketError(self.PROTOCOL_VERSION, dxl_error))
+            print(self.getRxPacketError(dxl_error))
             return True
         return False
-        
 
-    def scan(self, ran = 254):
+    def scan(self, ran=254):
         """
         Scans the given device for connected dynamixel motors
 
@@ -106,14 +112,16 @@ class dxl(object):
 
         __ids = []
         for i in range(ran):
-            dxl_model, dxl_comm_result, dxl_error = self.packetHandler.ping(self.portHandler, i)
+            dxl_model, dxl_comm_result, dxl_error = self.packetHandler.ping(
+                self.portHandler, i
+            )
             if dxl_comm_result != COMM_SUCCESS or dxl_error != 0:
                 pass
             else:
                 __ids.append(i)
         return __ids
 
-    def __read(self, DXL_ID, data):
+    def read(self, DXL_ID, data):
         """
         Reads a given value in the control table from the specified motor.
 
@@ -136,8 +144,6 @@ class dxl(object):
             return present_val
         else:
             return None
-
-
 
     def __write(self, DXL_ID, data, value):
         pos = self._register[data][0]
@@ -164,23 +170,44 @@ class dxl(object):
         Returns:
             The motor moves to the specified angle.
         """
-        data= "Goal Position"
+        data = "Goal Position"
         self.__write(DXL_ID, data, value)
 
     @staticmethod
-    def createByteArray(bin_value):
-        byte_array = [DXL_LOBYTE(DXL_LOWORD(bin_value)), DXL_HIBYTE(DXL_LOWORD(bin_value))]
+    def create2ByteArray(bin_value):
+        byte_array = [
+            DXL_LOBYTE(DXL_LOWORD(bin_value)),
+            DXL_HIBYTE(DXL_LOWORD(bin_value)),
+        ]
+        return byte_array
+
+    @staticmethod
+    def create1ByteArray(bin_value):
+        byte_array = [DXL_LOBYTE(DXL_LOWORD(bin_value))]
         return byte_array
 
     def __sync_write(self, param, ids):
         pos = self._register[param][0]
         size = self._register[param][1]
         groupSyncWrite = GroupSyncWrite(self.portHandler, self.packetHandler, pos, size)
-        for k,v in ids.items():
-            dxl_addparam_result = groupSyncWrite.addParam(k, self.createByteArray(v))
+        for k, v in ids.items():
+            if size == 2:
+                dxl_addparam_result = groupSyncWrite.addParam(
+                    k, self.create2ByteArray(v)
+                )
+            else:
+                dxl_addparam_result = groupSyncWrite.addParam(
+                    k, self.create1ByteArray(v)
+                )
             assert dxl_addparam_result, "Group Sync Write Failed"
         dxl_comm_result = groupSyncWrite.txPacket()
         assert self.error(dxl_comm_result) == False, "GroupSync Failed"
+
+    def set_torque(self, ids):
+        self.__sync_write("Torque Enable", ids)
+
+    def set_speed(self, ids):
+        self.__sync_write("Moving Speed", ids)
 
     def set_goal_position(self, ids):
         """
@@ -204,7 +231,7 @@ class dxl(object):
         Returns:
             Moves the specified motor by the given speed when written on.
         """
-        param= "Moving Speed"
+        param = "Moving Speed"
         pos = self._register[param][0]
         size = self._register[param][1]
         if size == 1:
