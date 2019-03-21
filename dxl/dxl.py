@@ -174,6 +174,16 @@ class dxl(object):
         self.__write(DXL_ID, data, value)
 
     @staticmethod
+    def create4ByteArray(bin_value):
+        byte_array = [
+            DXL_LOBYTE(DXL_LOWORD(bin_value)),
+            DXL_HIBYTE(DXL_LOWORD(bin_value)),
+            DXL_LOBYTE(DXL_HIWORD(bin_value)),
+            DXL_HIBYTE(DXL_HIWORD(bin_value)),
+        ]
+        return byte_array
+
+    @staticmethod
     def create2ByteArray(bin_value):
         byte_array = [
             DXL_LOBYTE(DXL_LOWORD(bin_value)),
@@ -195,9 +205,13 @@ class dxl(object):
                 dxl_addparam_result = groupSyncWrite.addParam(
                     k, self.create2ByteArray(v)
                 )
-            else:
+            elif size == 1:
                 dxl_addparam_result = groupSyncWrite.addParam(
                     k, self.create1ByteArray(v)
+                )
+            else:
+                dxl_addparam_result = groupSyncWrite.addParam(
+                    k, self.create4ByteArray(v)
                 )
             assert dxl_addparam_result, "Group Sync Write Failed"
         dxl_comm_result = groupSyncWrite.txPacket()
