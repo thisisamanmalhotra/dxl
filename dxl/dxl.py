@@ -18,8 +18,9 @@ def get_available_ports():
 
     return (
         glob.glob("/dev/ttyUSB*")
-        + glob.glob("/dev/ttyACM*")
+        + glob.glob("/dev/tty.usbserial*")
         + glob.glob("/dev/ttyCOM*")
+        + glob.glob("/dev/ttyACM*")
     )
 
 
