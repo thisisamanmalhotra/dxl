@@ -121,6 +121,31 @@ class dxl(object):
             else:
                 __ids.append(i)
         return __ids
+    
+    def change_id(self, old_id, new_id):
+        """
+        Changes the ID of the motor, given the old ID.
+
+        Args:
+            old_id: Old motor ID
+            new_id: New ID to be set to the motor.
+        Returns:
+            The motor's ID is changed.
+        """
+        data = "ID"
+        pos = self._register[data][0]
+        size = self._register[data][1]
+        if size == 1:
+            func = self.packetHandler.write1ByteTxRx
+        elif size == 2:
+            func = self.packetHandler.write2ByteTxRx
+        else:
+            func = self.packetHandler.write4ByteTxRx
+        dxl_comm, dxl_error = func(self.portHandler, old_id, pos, new_id)
+        if not self.error(dxl_comm, dxl_error):
+            return True
+        else:
+            return False
 
     def read(self, DXL_ID, data):
         """
